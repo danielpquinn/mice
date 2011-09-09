@@ -6,8 +6,7 @@ socket.on('news', function (data) {
 
 jQuery(document).ready(function() {
   
-  mice.scene = mice.createScene();
-  mice.scene.addChild(mice.newPlayer());
+  scene = mice.createScene();
   
 });
 
@@ -57,15 +56,6 @@ mice.createScene = function() {
 	// add to the scene
 	scene.addLight(pointLight);
 	
-	// draw!
-	renderer.render(scene, camera);
-	
-	return scene;
-
-}
-
-mice.newPlayer = function() {
-	
 	// create the sphere's material
 	var sphereMaterial = new THREE.MeshLambertMaterial(
 	{
@@ -81,7 +71,13 @@ mice.newPlayer = function() {
 	   new THREE.SphereGeometry(radius, segments, rings),
 	   sphereMaterial);
 	
-	// add the sphere to the scene
-	return sphere;
+  scene.addChild(sphere);
+	
+	// draw!
+	renderer.render(scene, camera);
+
+}
+
+mice.newPlayer = function() {
 	
 }
