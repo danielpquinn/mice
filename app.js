@@ -29,7 +29,7 @@ io.sockets.on('connection', function(socket) {
     id = socket.id;
     players.push(id);
     io.sockets.emit('player connect', {
-        players: players
+        id: id
     });
     socket.on('keydown', function(data) {
         io.sockets.emit('player keydown', {
@@ -40,7 +40,7 @@ io.sockets.on('connection', function(socket) {
     socket.on('disconnect', function(id) {
         players.splice(players.indexOf(id), 1);
         io.sockets.emit('player disconnect', {
-            players: players
+            id: id
         });
     });
 });
