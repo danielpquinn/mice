@@ -4,7 +4,8 @@ var app = {
     express: 0,
     server: 0,
     io: 0,
-    tid: 0
+    tid: 0,
+    activePlayer: false
 };
 app.init = function() { // init app properties    
     this.players = [];
@@ -48,14 +49,21 @@ app.init = function() { // init app properties
         });
         socket.on('keydown', function(data) {
             app.onKeyDown(id, data);
-            app.updatePlayers();
-            io.sockets.emit('game update', {
-                players: app.players
+            io.sockets.emit('game event', {
+              players: app.players
             });
         });
         socket.on('keyup', function(data) {
             app.onKeyUp(id, data);
+            io.sockets.emit('game event', {
+              players: app.players
+            });
         });
+        setInterval(function(){
+            io.sockets.emit('game sync', {
+              players: app.players
+            });
+        }, 2000);
         socket.on('disconnect', function() {
             io.sockets.emit('player disconnect', {
                 id: id,
@@ -64,10 +72,11 @@ app.init = function() { // init app properties
             for (var i = 0, max = app.players.length; i < max; i++) {
                 if (app.players[i].id === id) {
                     app.players.splice(i, 1);
-                }
+                  }
             }
         });
     });
+    this.gameLoop();
 }
 app.createPlayer = function(id) {
     player = {
@@ -125,19 +134,27 @@ app.onKeyUp = function(id, data) {
     }
 }
 app.updatePlayers = function() {
+    var currPlayer;
     for (var i = 0, max = app.players.length; i < max; i++) {
-        if (app.players[i].leftPressed) {
-            app.players[i].x -= 10;
+        currPlayer = app.players[i];
+        if (currPlayer.leftPressed) {
+          currPlayer.x -= 10;
         }
-        if (app.players[i].rightPressed) {
-            app.players[i].x += 10;
+        if (currPlayer.rightPressed) {
+            currPlayer.x += 10;
         }
-        if (app.players[i].upPressed) {
-            app.players[i].y += 10;
+        if (currPlayer.upPressed) {
+            currPlayer.y += 10;
         }
-        if (app.players[i].downPressed) {
-            app.players[i].y -= 10;
+        if (currPlayer.downPressed) {
+          currPlayer.y -= 10;
         }
     }
 }
+app.gameLoop = function() {
+  app.updatePlayers();
+}
 app.init();
+setInterval(function(){
+  app.gameLoop();
+}, 50);

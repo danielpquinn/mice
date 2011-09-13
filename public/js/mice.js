@@ -9,11 +9,7 @@ mice.init = function() {
         console.log(data.id + ' connected');
         for (var i = 0, max = data.players.length; i < max; i++) {
             if (!players[i]) {
-                var newSphere = mice.createSphere();
-                var newPlayer = {
-                    id: data.players[i].id,
-                    body: newSphere
-                }
+                var newPlayer = mice.createPlayer();
                 players.push(newPlayer);
                 newPlayer.body.position.x = data.players[i].x;
                 newPlayer.body.position.y = data.players[i].y;
@@ -31,11 +27,19 @@ mice.init = function() {
             }
         }
     });
-    socket.on('game update', function(data) {
+    socket.on('game sync', function(data) {
         for (var i = 0, max = data.players.length; i < max; i++) {
             players[i].body.position.x = data.players[i].x;
             players[i].body.position.y = data.players[i].y;
-            players[i].body.position.z = data.players[i].z;
+            players[i].body.position.z = data.players[i].z;           
+        }
+    });
+    socket.on('game event', function(data) {
+        for (var i = 0, max = data.players.length; i < max; i++) {
+            players[i].leftPressed = data.players[i].leftPressed;
+            players[i].rightPressed = data.players[i].rightPressed;
+            players[i].upPressed = data.players[i].upPressed;
+            players[i].downPressed = data.players[i].downPressed;            
         }
     });
     this.container = document.getElementById('container');
@@ -58,7 +62,22 @@ mice.init = function() {
     this.scene.fog = new THREE.FogExp2(0xffffff, 0.00015);
     this.webglRenderer = new THREE.WebGLRenderer();
     this.createScene();
-    this.animate();
+    this.gameLoop();
+}
+mice.createPlayer = function(id) {
+    var newSphere = mice.createSphere();
+    player = {
+        x: 0,
+        y: 0,
+        z: 0,
+        leftPressed: false,
+        rightPressed: false,
+        upPressed: false,
+        downPressed: false,
+        id: id,
+        body: newSphere
+    };
+    return player;
 } // Setup scene
 mice.createScene = function() {
     this.camera = new THREE.Camera(70, window.innerWidth / window.innerHeight, 1, 1000);
@@ -148,12 +167,31 @@ $(document).keyup(function(e) {
         break;
     }
 });
-mice.animate = function() {
-    mice.webglRenderer.render(mice.scene, mice.camera);
-    tid = setTimeout(function() {
-        mice.animate();
-    }, 100);
+mice.updatePlayers = function() {
+    var currPlayer;
+    for (var i = 0, max = mice.players.length; i < max; i++) {
+        currPlayer = mice.players[i];
+        if (currPlayer.leftPressed) {
+          currPlayer.body.position.x -= 10;
+        }
+        if (currPlayer.rightPressed) {
+            currPlayer.body.position.x += 10;
+        }
+        if (currPlayer.upPressed) {
+            currPlayer.body.position.y += 10;
+        }
+        if (currPlayer.downPressed) {
+          currPlayer.body.position.y -= 10;
+        }
+    }
+}
+mice.gameLoop = function() {
+  mice.updatePlayers();
+  mice.webglRenderer.render(mice.scene, mice.camera);
 }
 jQuery(document).ready(function() {
-    mice.init();
+    mice.init();  
+    setInterval(function(){
+      mice.gameLoop();
+    }, 50);
 });
