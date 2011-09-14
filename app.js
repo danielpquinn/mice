@@ -4,8 +4,7 @@ var app = {
     express: 0,
     server: 0,
     io: 0,
-    tid: 0,
-    activePlayer: false
+    tid: 0
 };
 app.init = function() { // init app properties    
     this.players = [];
@@ -43,6 +42,9 @@ app.init = function() { // init app properties
         var id = socket.id;
         newPlayer = app.createPlayer(id);
         app.players.push(newPlayer);
+        socket.emit('assign id', {
+          id: id
+        })
         io.sockets.emit('player connect', {
             id: id,
             players: app.players
@@ -70,7 +72,7 @@ app.init = function() { // init app properties
                 players: app.players
             });
             for (var i = 0, max = app.players.length; i < max; i++) {
-                if (app.players[i].id === id) {
+                if (app.players[i]) {
                     app.players.splice(i, 1);
                   }
             }
@@ -144,10 +146,10 @@ app.updatePlayers = function() {
             currPlayer.x += 10;
         }
         if (currPlayer.upPressed) {
-            currPlayer.y += 10;
+            currPlayer.z -= 10;
         }
         if (currPlayer.downPressed) {
-          currPlayer.y -= 10;
+          currPlayer.z += 10;
         }
     }
 }

@@ -1,6 +1,6 @@
 body {
-  padding: 50px;
   font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+  background: #999;
 }
 
 a {
@@ -9,4 +9,5 @@ a {
 
 #container {
   border: 1px solid #888;
+  background: white;
 }
