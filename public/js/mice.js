@@ -16,8 +16,8 @@ mice.init = function() {
                 var newPlayer = mice.createPlayer();
                 newPlayer.id = data.id;
                 newPlayer.body.position.x = data.players[i].x;
-                newPlayer.body.position.y = data.players[i].y;
                 newPlayer.body.position.z = data.players[i].z;
+                newPlayer.body.position.rotation = data.players[i].rotation;
                 players.push(newPlayer);
                 mice.scene.addChild(newPlayer.body);
             }
@@ -35,8 +35,8 @@ mice.init = function() {
     socket.on('game sync', function(data) {
         for (var i = 0, max = data.players.length; i < max; i++) {
             players[i].body.position.x = data.players[i].x;
-            players[i].body.position.y = data.players[i].y;
-            players[i].body.position.z = data.players[i].z;           
+            players[i].body.position.z = data.players[i].z;
+            players[i].body.position.rotation = data.players[i].rotation;
         }
     });
     socket.on('game event', function(data) {
@@ -48,47 +48,33 @@ mice.init = function() {
         }
     });
     this.container = document.getElementById('container');
-    this.camera = new THREE.FirstPersonCamera({
-        fov: 50,
-        aspect: window.innerWidth / window.innerHeight,
-        near: 1,
-        far: 20000,
-        constrainVertical: true,
-        verticalMin: 1.1,
-        verticalMax: 2.2,
-        movementSpeed: 1000,
-        lookSpeed: 0.125,
-        noFly: false,
-        lookVertical: true,
-        autoForward: false
-    });
-    this.camera.target.position.z = -100;
     this.scene = new THREE.Scene();
     this.webglRenderer = new THREE.WebGLRenderer();
     this.createScene();
     this.gameLoop();
 }
 mice.createPlayer = function(id) {
-    var newSphere = mice.createSphere();
+    var newCube = mice.createSphere();
     player = {
         x: 0,
         y: 0,
         z: 0,
+        rotation: 0,
         leftPressed: false,
         rightPressed: false,
         upPressed: false,
         downPressed: false,
         id: id,
-        body: newSphere
+        body: newCube
     };
     return player;
 } // Setup scene
 mice.createScene = function() {
     var floor,
         cube;
-    
     this.camera = new THREE.Camera(70, window.innerWidth / window.innerHeight, 1, 1000);
-    this.camera.position.y = 100;
+    this.camera.useTarget = false;
+    this.camera.position.y = 10;
     directionalLight = new THREE.DirectionalLight(0xffffff);
     directionalLight.position.x = 50;
     directionalLight.position.y = 500;
@@ -193,25 +179,26 @@ mice.updatePlayers = function() {
     for (var i = 0, max = mice.players.length; i < max; i++) {
         currPlayer = mice.players[i];
         if (currPlayer.leftPressed) {
-          currPlayer.body.position.x -= 10;
+            currPlayer.rotation += 0.1;
         }
         if (currPlayer.rightPressed) {
-            currPlayer.body.position.x += 10;
+            currPlayer.rotation -= 0.1;
         }
         if (currPlayer.upPressed) {
-            currPlayer.body.position.z -= 10;
+            currPlayer.body.position.x -= Math.sin(currPlayer.rotation) * 10;
+            currPlayer.body.position.z -= Math.cos(currPlayer.rotation) * 10;
         }
         if (currPlayer.downPressed) {
-            currPlayer.body.position.z += 10;
+            //currPlayer.body.position.z += 10;
         }
         if (currPlayer.id === mice.me) {
+          mice.camera.rotation.y = currPlayer.rotation;
+          mice.camera.rotation.y = currPlayer.rotation;
           mice.camera.position.x = currPlayer.body.position.x;
           mice.camera.position.z = currPlayer.body.position.z;
         }
+        currPlayer.body.rotation.y = currPlayer.rotation;
     }
-}
-mice.degreesToRadians = function(degrees) {
-  return degrees * Math.PI / 180;
 }
 mice.gameLoop = function() {
   mice.updatePlayers();

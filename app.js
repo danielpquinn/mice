@@ -85,6 +85,7 @@ app.createPlayer = function(id) {
         x: 0,
         y: 0,
         z: 0,
+        rotation: 0,
         leftPressed: false,
         rightPressed: false,
         upPressed: false,
@@ -140,16 +141,17 @@ app.updatePlayers = function() {
     for (var i = 0, max = app.players.length; i < max; i++) {
         currPlayer = app.players[i];
         if (currPlayer.leftPressed) {
-          currPlayer.x -= 10;
+            currPlayer.rotation += 0.1;
         }
         if (currPlayer.rightPressed) {
-            currPlayer.x += 10;
+            currPlayer.rotation -= 0.1;
         }
         if (currPlayer.upPressed) {
-            currPlayer.z -= 10;
+            currPlayer.x -= Math.sin(currPlayer.rotation) * 10;
+            currPlayer.z -= Math.cos(currPlayer.rotation) * 10;
         }
         if (currPlayer.downPressed) {
-          currPlayer.z += 10;
+            //currPlayer.body.position.z += 10;
         }
     }
 }
