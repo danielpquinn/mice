@@ -3,8 +3,7 @@ var app = {
     players: [],
     express: 0,
     server: 0,
-    io: 0,
-    tid: 0
+    io: 0
 };
 app.init = function() { // init app properties    
     this.players = [];
@@ -13,8 +12,7 @@ app.init = function() { // init app properties
     this.io = require('socket.io').listen(this.server); // create local references to properties
     var express = this.express,
         server = this.server,
-        io = this.io,
-        tid = this.tid; // listen on 8000
+        io = this.io
     server.listen(8000); // configure server
     server.configure(function() {
         server.set('views', __dirname + '/views');
@@ -42,12 +40,13 @@ app.init = function() { // init app properties
         var id = socket.id;
         newPlayer = app.createPlayer(id);
         app.players.push(newPlayer);
-        socket.emit('assign id', {
-          id: id
-        })
+        console.log(app.players);
         io.sockets.emit('player connect', {
             id: id,
             players: app.players
+        });
+        socket.emit('assign id', {
+          id: id
         });
         socket.on('keydown', function(data) {
             app.onKeyDown(id, data);
@@ -65,17 +64,20 @@ app.init = function() { // init app properties
             io.sockets.emit('game sync', {
               players: app.players
             });
-        }, 2000);
+        }, 10000);
         socket.on('disconnect', function() {
+            console.log(app.players);
+            for (var i = 0, max = app.players.length; i < max; i++) {
+                console.log(app.players[i]);
+                if (app.players[i].id === id) {
+                    app.players.splice(i, 1);
+                    break;
+                }
+            }
             io.sockets.emit('player disconnect', {
                 id: id,
                 players: app.players
             });
-            for (var i = 0, max = app.players.length; i < max; i++) {
-                if (app.players[i]) {
-                    app.players.splice(i, 1);
-                  }
-            }
         });
     });
     this.gameLoop();
@@ -151,7 +153,8 @@ app.updatePlayers = function() {
             currPlayer.z -= Math.cos(currPlayer.rotation) * 10;
         }
         if (currPlayer.downPressed) {
-            //currPlayer.body.position.z += 10;
+            currPlayer.x += Math.sin(currPlayer.rotation) * 10;
+            currPlayer.z += Math.cos(currPlayer.rotation) * 10;
         }
     }
 }

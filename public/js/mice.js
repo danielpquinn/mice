@@ -1,26 +1,32 @@
 var mice = {
     players: [],
-    socket: io.connect('http://localhost'),
-    me: 0
+    socket: io.connect('http://localhost')
 };
 mice.init = function() {
     var socket = this.socket,
         players = this.players;
-    socket.on('assign id', function(data) {
-        mice.me = data.id;
-    });
     socket.on('player connect', function(data) {
-        console.log(data.id + ' connected');
         for (var i = 0, max = data.players.length; i < max; i++) {
             if (!players[i]) {
                 var newPlayer = mice.createPlayer();
-                newPlayer.id = data.id;
+                newPlayer.body = mice.createSphere();
+                newPlayer.id = data.players[i].id;
                 newPlayer.body.position.x = data.players[i].x;
                 newPlayer.body.position.z = data.players[i].z;
                 newPlayer.body.position.rotation = data.players[i].rotation;
                 players.push(newPlayer);
                 mice.scene.addChild(newPlayer.body);
             }
+        }
+        console.log(players);
+        console.log(data.players); 
+    });
+    socket.on('assign id', function(data) {
+        console.log('assign id: ' + data.id);
+        for (var i = 0, max = players.length; i < max; i++) {
+          if(players[i].id === data.id) {
+            players[i].isme = true;
+          }
         }
     });
     socket.on('player disconnect', function(data) {
@@ -29,6 +35,7 @@ mice.init = function() {
             if (players[i].id === data.id) {
                 mice.scene.removeChild(players[i].body);
                 players.splice(i, 1);
+                break;
             }
         }
     });
@@ -65,7 +72,8 @@ mice.createPlayer = function(id) {
         upPressed: false,
         downPressed: false,
         id: id,
-        body: newCube
+        body: 0,
+        isme: false
     };
     return player;
 } // Setup scene
@@ -80,10 +88,10 @@ mice.createScene = function() {
     directionalLight.position.y = 500;
     directionalLight.position.z = 500;
     directionalLight.position.normalize();
-    var cube = this.createCube();
-    var floor = this.createFloor();
-    this.scene.addChild(cube);
-    this.scene.addChild(floor);
+    mice.cube = this.createCube();
+    mice.floor = this.createFloor();
+    this.scene.addChild(mice.cube);
+    this.scene.addChild(mice.floor);
     this.scene.addLight(directionalLight);
     this.webglRenderer.setSize(window.innerWidth - 20, window.innerHeight - 20);
     this.container.appendChild(mice.webglRenderer.domElement);
@@ -107,7 +115,7 @@ mice.createFloor = function() {
     return floor;
 }
 mice.createCube = function() {
-    cube = new THREE.Mesh( new THREE.CubeGeometry( 20, 20, 20 ), new THREE.MeshNormalMaterial() );
+    cube = new THREE.Mesh( new THREE.CubeGeometry( 20, 2000, 20 ), new THREE.MeshNormalMaterial() );
     return cube;
 }
 $(document).keydown(function(e) {
@@ -189,9 +197,10 @@ mice.updatePlayers = function() {
             currPlayer.body.position.z -= Math.cos(currPlayer.rotation) * 10;
         }
         if (currPlayer.downPressed) {
-            //currPlayer.body.position.z += 10;
+            currPlayer.body.position.x += Math.sin(currPlayer.rotation) * 10;
+            currPlayer.body.position.z += Math.cos(currPlayer.rotation) * 10;
         }
-        if (currPlayer.id === mice.me) {
+        if (currPlayer.isme) {
           mice.camera.rotation.y = currPlayer.rotation;
           mice.camera.rotation.y = currPlayer.rotation;
           mice.camera.position.x = currPlayer.body.position.x;
@@ -199,6 +208,7 @@ mice.updatePlayers = function() {
         }
         currPlayer.body.rotation.y = currPlayer.rotation;
     }
+    mice.cube.rotation.y += 0.01;
 }
 mice.gameLoop = function() {
   mice.updatePlayers();
