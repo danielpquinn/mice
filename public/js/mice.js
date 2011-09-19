@@ -1,6 +1,7 @@
 var mice = {
     players: [],
-    socket: io.connect('http://localhost')
+    socket: io.connect('http://localhost'),
+    keysPressed: []
 };
 mice.init = function() {
     var socket = this.socket,
@@ -48,10 +49,7 @@ mice.init = function() {
     });
     socket.on('game event', function(data) {
         for (var i = 0, max = data.players.length; i < max; i++) {
-            players[i].leftPressed = data.players[i].leftPressed;
-            players[i].rightPressed = data.players[i].rightPressed;
-            players[i].upPressed = data.players[i].upPressed;
-            players[i].downPressed = data.players[i].downPressed;            
+            players[i].keysPressed = data.players[i].keysPressed;
         }
     });
     this.container = document.getElementById('container');
@@ -67,10 +65,7 @@ mice.createPlayer = function(id) {
         y: 0,
         z: 0,
         rotation: 0,
-        leftPressed: false,
-        rightPressed: false,
-        upPressed: false,
-        downPressed: false,
+        keysPressed: [],
         id: id,
         body: 0,
         isme: false
@@ -98,7 +93,7 @@ mice.createScene = function() {
 }
 mice.createSphere = function() { // create the sphere's material
     var redMaterial = new THREE.MeshLambertMaterial({
-        color: 0xCC0000
+        color: 0x333333
     }); // set up the sphere vars
     var radius = 20,
         segments = 16,
@@ -108,7 +103,7 @@ mice.createSphere = function() { // create the sphere's material
 } //Keyboard Events!
 mice.createFloor = function() {
     var redMaterial = new THREE.MeshLambertMaterial({
-        color: 0xCC0000
+        color: 0x333333
     });
     floor = new THREE.Mesh( new THREE.CubeGeometry( 500, 10, 500 ), redMaterial);
     floor.position.y = -50;
@@ -119,94 +114,54 @@ mice.createCube = function() {
     return cube;
 }
 $(document).keydown(function(e) {
-    switch (e.keyCode) {
-    case 37:
-        e.preventDefault();
-        mice.leftPressed = true;
-        mice.socket.emit('keydown', {
-            keypressed: 'left'
-        });
-        break;
-    case 38:
-        e.preventDefault();
-        mice.upPressed = true;
-        mice.socket.emit('keydown', {
-            keypressed: 'up'
-        });
-        break;
-    case 39:
-        e.preventDefault();
-        mice.rightPressed = true;
-        mice.socket.emit('keydown', {
-            keypressed: 'right'
-        });
-        break;
-    case 40:
-        e.preventDefault();
-        mice.downPressed = true;
-        mice.socket.emit('keydown', {
-            keypressed: 'down'
-        });
-        break;
+    e.preventDefault();
+    if(mice.keysPressed.indexOf(e.keyCode) === -1) {
+      mice.keysPressed.push(e.keyCode);
+      mice.socket.emit('keydown', {
+        keysPressed: mice.keysPressed
+      });
     }
 });
 $(document).keyup(function(e) {
-    switch (e.keyCode) {
-    case 37:
-        e.preventDefault();
-        mice.leftPressed = false;
-        mice.socket.emit('keyup', {
-            keylifted: 'left'
-        });
-        break;
-    case 38:
-        e.preventDefault();
-        mice.upPressed = false;
-        mice.socket.emit('keyup', {
-            keylifted: 'up'
-        });
-        break;
-    case 39:
-        e.preventDefault();
-        mice.rightPressed = false;
-        mice.socket.emit('keyup', {
-            keylifted: 'right'
-        });
-        break;
-    case 40:
-        e.preventDefault();
-        mice.downPressed = false;
-        mice.socket.emit('keyup', {
-            keylifted: 'down'
-        });
-        break;
-    }
+    e.preventDefault();
+    mice.keysPressed.splice(mice.keysPressed.indexOf(e.keyCode), 1);
+    mice.socket.emit('keyup', {
+      keysPressed: mice.keysPressed
+    });
 });
+Array.prototype.inArray = function(value) {
+  for(var i = 0, max = this.length; i < max; i++) {
+    if(this[i] === value) {
+      return true;
+    }
+  }
+  return false;
+}
 mice.updatePlayers = function() {
     var currPlayer;
     for (var i = 0, max = mice.players.length; i < max; i++) {
         currPlayer = mice.players[i];
-        if (currPlayer.leftPressed) {
+        if (currPlayer.keysPressed.inArray(37)) {
             currPlayer.rotation += 0.1;
         }
-        if (currPlayer.rightPressed) {
+        if (currPlayer.keysPressed.inArray(39)) {
             currPlayer.rotation -= 0.1;
         }
-        if (currPlayer.upPressed) {
+        if (currPlayer.keysPressed.inArray(38)) {
             currPlayer.body.position.x -= Math.sin(currPlayer.rotation) * 10;
             currPlayer.body.position.z -= Math.cos(currPlayer.rotation) * 10;
         }
-        if (currPlayer.downPressed) {
+        if (currPlayer.keysPressed.inArray(40)) {
             currPlayer.body.position.x += Math.sin(currPlayer.rotation) * 10;
             currPlayer.body.position.z += Math.cos(currPlayer.rotation) * 10;
         }
+        currPlayer.body.rotation.y = currPlayer.rotation;
         if (currPlayer.isme) {
           mice.camera.rotation.y = currPlayer.rotation;
           mice.camera.rotation.y = currPlayer.rotation;
           mice.camera.position.x = currPlayer.body.position.x;
           mice.camera.position.z = currPlayer.body.position.z;
         }
-        currPlayer.body.rotation.y = currPlayer.rotation;
     }
     mice.cube.rotation.y += 0.01;
 }

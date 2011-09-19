@@ -49,6 +49,7 @@ app.init = function() { // init app properties
           id: id
         });
         socket.on('keydown', function(data) {
+            console.log(data);
             app.onKeyDown(id, data);
             io.sockets.emit('game event', {
               players: app.players
@@ -88,71 +89,49 @@ app.createPlayer = function(id) {
         y: 0,
         z: 0,
         rotation: 0,
-        leftPressed: false,
-        rightPressed: false,
-        upPressed: false,
-        downPressed: false,
+        keysPressed: [],
         id: id
     };
     return player;
 }
 app.onKeyDown = function(id, data) {
-    console.log(id + ' pressed ' + data.keypressed);
     for (var i = 0, max = app.players.length; i < max; i++) {
         if (app.players[i].id === id) {
-            switch (data.keypressed) {
-            case 'left':
-                app.players[i].leftPressed = true;
-                break;
-            case 'right':
-                app.players[i].rightPressed = true;
-                break;
-            case 'up':
-                app.players[i].upPressed = true;
-                break;
-            case 'down':
-                app.players[i].downPressed = true;
-                break;
-            }
+            console.log(app.players[i].keysPressed);
+            app.players[i].keysPressed = data.keysPressed;
         }
     }
 }
 app.onKeyUp = function(id, data) {
-    console.log(id + ' lifted ' + data.keylifted);
     for (var i = 0, max = app.players.length; i < max; i++) {
         if (app.players[i].id === id) {
-            switch (data.keylifted) {
-            case 'left':
-                app.players[i].leftPressed = false;
-                break;
-            case 'right':
-                app.players[i].rightPressed = false;
-                break;
-            case 'up':
-                app.players[i].upPressed = false;
-                break;
-            case 'down':
-                app.players[i].downPressed = false;
-                break;
-            }
+            app.players[i].keysPressed = data.keysPressed;
         }
     }
+}
+Array.prototype.inArray = function(value) {
+  for(var i = 0, max = this.length; i < max; i++) {
+    if(this[i] === value) {
+      return true;
+    }
+  }
+  return false;
 }
 app.updatePlayers = function() {
     var currPlayer;
     for (var i = 0, max = app.players.length; i < max; i++) {
         currPlayer = app.players[i];
-        if (currPlayer.leftPressed) {
+        if (currPlayer.keysPressed.inArray(37)) {
             currPlayer.rotation += 0.1;
         }
-        if (currPlayer.rightPressed) {
+        if (currPlayer.keysPressed.inArray(39)) {
             currPlayer.rotation -= 0.1;
         }
-        if (currPlayer.upPressed) {
+        if (currPlayer.keysPressed.inArray(38)) {
             currPlayer.x -= Math.sin(currPlayer.rotation) * 10;
             currPlayer.z -= Math.cos(currPlayer.rotation) * 10;
         }
-        if (currPlayer.downPressed) {
+        if (currPlayer.keysPressed.inArray(40)) {
             currPlayer.x += Math.sin(currPlayer.rotation) * 10;
             currPlayer.z += Math.cos(currPlayer.rotation) * 10;
         }
